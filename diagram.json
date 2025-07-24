@@ -72,7 +72,7 @@
     [ "led1:A", "esp:4", "red", [ "v0" ] ],
     [ "led1:C", "esp:GND.2", "black", [ "v288", "h0.4" ] ],
     [ "led2:C", "led1:C", "black", [ "v28.8", "h0.4" ] ],
-    [ "led2:A", "esp:16", "green", [ "v211.2", "h-28.8", "v182.4" ] ],
+    [ "led2:A", "esp:16", "gold", [ "v211.2", "h-28.8", "v182.4" ] ],
     [ "led3:A", "esp:17", "green", [ "v220.8", "h-67.2", "v163.2" ] ]
   ],
   "dependencies": {}
