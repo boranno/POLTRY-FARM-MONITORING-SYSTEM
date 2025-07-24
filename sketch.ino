@@ -2,81 +2,225 @@
 #define BLYNK_TEMPLATE_NAME "POULTRY FARM MANAGEMENT SYSTEM"
 #define BLYNK_AUTH_TOKEN "Ar5-H-c2MrMfcBwxQAe72UBtV_DpQZCd"
 
-// Include necessary libraries
-#include <WiFi.h>                 // WiFi library for ESP32
-#include <BlynkSimpleEsp32.h>     // Blynk library for ESP32
+// Include required libraries
+#include <WiFi.h>
+#include <BlynkSimpleEsp32.h>
 #include <DHT.h>
 #include <LiquidCrystal_I2C.h>
+#include <Arduino.h>  // for FreeRTOS functions
 
-// Replace with your network credentials
-char ssid[] = "Wokwi-GUEST";       // <-- change to your WiFi SSID
-char pass[] = "";   // <-- change to your WiFi password
+// WiFi credentials -- CHANGE TO YOUR NETWORK
+char ssid[] = "Wokwi-GUEST";
+char pass[] = "";
 
-// Sensor and pin setup
+// Pin definitions
 const int DHT_Pin = 26;
 const int MQ_Pin = 33;
-const int Calibration_Switch = 35;
+const int Calibration_Switch = 18; // Make sure this matches your wiring
+
+// LEDs
 const int RED_LED = 4;
 const int YELLOW_LED = 16;
 const int BLUE_LED = 17;
+const int BLYNK_UPLOAD_ONGOING = 15;
+const int BLYNK_UPLOAD_STOPPED = 2;
 
 #define DHT_TYPE DHT22
 DHT dht(DHT_Pin, DHT_TYPE);
 
-// LCD setup (I2C address 0x27, 16x2 display)
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// MQ-137 calibration constants
+// MQ-137 sensor constants
 #define RL_VALUE 47
 #define SLOPE -0.263
 #define INTERCEPT 0.42
 
 #define CALIBRATION_SAMPLE_TIMES 50
-#define CALIBRATION_SAMPLE_INTERVAL 500  // milliseconds
+#define CALIBRATION_SAMPLE_INTERVAL 500 // ms
 
-// Long press calibration parameters
-const unsigned long CALIBRATION_HOLD_TIME = 5000; // 5 seconds
-unsigned long buttonPressStartTime = 0;
-bool calibrationTriggered = false;
-bool showingHoldMessage = false;
+const unsigned long CALIBRATION_HOLD_TIME = 5000;  // ms
 
-// Default RO value for MQ sensor before calibration
+// Default calibration value for MQ sensor
 float RO_CLEAN_AIR_VALUE = 30.0;
 
-// Environmental state enum
+// Farm State enum
 enum FarmState {
   OPTIMAL = 1,
   SUBOPTIMAL = 2,
   POOR_DANGEROUS = 3
 };
 
-// Function declarations
+// Shared volatile sensor data variables
+volatile float temperature = 0.0;
+volatile float humidity = 0.0;
+volatile float ppm = 0.0;
+volatile FarmState currentState = OPTIMAL;
+
+// Mutex for critical sections
+portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+
+// Calibration button variables
+unsigned long buttonPressStartTime = 0;
+bool calibrationTriggered = false;
+bool showingHoldMessage = false;
+
+// Timing for Blynk data upload
+unsigned long lastBlynkUploadTime = 0;
+const unsigned long BLYNK_UPLOAD_INTERVAL = 10000;  // 10 seconds
+
+// Forward declarations
 FarmState classifyFarmState(float temperature, float humidity, float ammonia_ppm);
 String getStateAbbrev(FarmState state);
-String getStateString(FarmState state);
 void calibrate();
+void connectWiFiWithAnimation();
+void startupAnimation();
+
+// Scrolling startup animation with project name
+void startupAnimation() {
+  String projectName = "POULTRY FARM MONITOR";
+  String padding = "                "; // 16 spaces for LCD width
+  String scrollText = padding + projectName + padding;
+
+  int len = scrollText.length();
+
+  for (int i = 0; i < len - 15; i++) { // 16 characters visible at once
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print(scrollText.substring(i, i + 16));
+    delay(250);
+  }
+
+  // Optional steady message on second line
+  lcd.setCursor(0, 1);
+  lcd.print("Starting Up... ");
+  delay(2000);
+}
+
+// WiFi connection animation and message
+void connectWiFiWithAnimation() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Connecting to");
+  lcd.setCursor(0, 1);
+  lcd.print(ssid);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, pass);
+
+  const unsigned long connectTimeout = 15000;  // 15 seconds
+  unsigned long startTime = millis();
+
+  const char animChars[] = {'|', '/', '-', '\\'};
+  int animIndex = 0;
+
+  while (WiFi.status() != WL_CONNECTED && (millis() - startTime) < connectTimeout) {
+    if ((millis() - startTime) % 300 < 50) {
+      lcd.setCursor(15, 1);
+      lcd.print(animChars[animIndex]);
+      animIndex = (animIndex + 1) % 4;
+    }
+    delay(50);
+  }
+
+  lcd.clear();
+  if (WiFi.status() == WL_CONNECTED) {
+    lcd.setCursor(0, 0);
+    lcd.print("WiFi Connected");
+    lcd.setCursor(0, 1);
+    lcd.print(WiFi.localIP());
+    Serial.print("WiFi Connected. IP: ");
+    Serial.println(WiFi.localIP());
+    delay(2500);
+  } else {
+    lcd.setCursor(0,0);
+    lcd.print("WiFi Failed!");
+    Serial.println("WiFi connection failed.");
+    delay(2500);
+  }
+}
+
+// Sensor reading task executed on core 0
+void sensorTask(void* parameter) {
+  (void) parameter;
+
+  for (;;) {
+    float temp = dht.readTemperature();
+    float hum = dht.readHumidity();
+
+    if (isnan(temp) || isnan(hum)) {
+      temp = 0;
+      hum = 0;
+    }
+
+    int adcValue = analogRead(MQ_Pin);
+    float sensorVoltage = (adcValue / 4095.0) * 3.3;
+
+    float Rs = ((5.0 * RL_VALUE) / sensorVoltage) - RL_VALUE;
+    float ratio = Rs / RO_CLEAN_AIR_VALUE;
+    float newPpm = pow(10, ((log10(ratio) - INTERCEPT) / SLOPE));
+
+    if (newPpm < 0 || isnan(newPpm) || isinf(newPpm)) newPpm = 0;
+
+    FarmState stateNew = classifyFarmState(temp, hum, newPpm);
+
+    portENTER_CRITICAL(&mux);
+    temperature = temp;
+    humidity = hum;
+    ppm = newPpm;
+    currentState = stateNew;
+    portEXIT_CRITICAL(&mux);
+
+    vTaskDelay(pdMS_TO_TICKS(2000));  // Update every 2 seconds
+  }
+}
 
 void setup() {
   Serial.begin(115200);
 
+  // Initialize all pins and LEDs
   pinMode(Calibration_Switch, INPUT_PULLUP);
   pinMode(RED_LED, OUTPUT);
   pinMode(YELLOW_LED, OUTPUT);
   pinMode(BLUE_LED, OUTPUT);
+  pinMode(BLYNK_UPLOAD_ONGOING, OUTPUT);
+  pinMode(BLYNK_UPLOAD_STOPPED, OUTPUT);
 
   digitalWrite(RED_LED, LOW);
   digitalWrite(YELLOW_LED, LOW);
   digitalWrite(BLUE_LED, LOW);
+  digitalWrite(BLYNK_UPLOAD_ONGOING, LOW);
+  digitalWrite(BLYNK_UPLOAD_STOPPED, LOW);
 
   dht.begin();
   lcd.init();
   lcd.backlight();
   analogReadResolution(12);
 
-  // Connect to Blynk
-  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+  startupAnimation();
+  connectWiFiWithAnimation();
 
-  // Welcome message
+  if (WiFi.status() == WL_CONNECTED) {
+    Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+  } else {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("No WiFi Conn");
+    lcd.setCursor(0, 1);
+    lcd.print("Local Mode Only");
+    Serial.println("No WiFi connection. Skipping Blynk startup.");
+  }
+
+  xTaskCreatePinnedToCore(
+    sensorTask,
+    "SensorTask",
+    4096,
+    NULL,
+    1,
+    NULL,
+    0
+  );
+
+  lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Poultry Farm");
   lcd.setCursor(0, 1);
@@ -91,7 +235,14 @@ void setup() {
 void loop() {
   Blynk.run();
 
-  // Read calibration button
+  if (Blynk.connected() && WiFi.status() == WL_CONNECTED) {
+    digitalWrite(BLYNK_UPLOAD_ONGOING, HIGH);
+    digitalWrite(BLYNK_UPLOAD_STOPPED, LOW);
+  } else {
+    digitalWrite(BLYNK_UPLOAD_ONGOING, LOW);
+    digitalWrite(BLYNK_UPLOAD_STOPPED, HIGH);
+  }
+
   int buttonState = digitalRead(Calibration_Switch);
 
   if (buttonState == LOW && !calibrationTriggered) {
@@ -100,7 +251,6 @@ void loop() {
       showingHoldMessage = false;
       Serial.println("Calibration button pressed - hold for 5 seconds...");
     }
-
     unsigned long holdDuration = millis() - buttonPressStartTime;
 
     if (holdDuration > 1000 && !showingHoldMessage) {
@@ -126,8 +276,7 @@ void loop() {
       calibrationTriggered = true;
       showingHoldMessage = false;
     }
-  }
-  else if (buttonState == HIGH) {
+  } else if (buttonState == HIGH) {
     if (buttonPressStartTime != 0 && !calibrationTriggered) {
       Serial.println("Button released before 5 seconds - calibration cancelled");
     }
@@ -136,60 +285,44 @@ void loop() {
     showingHoldMessage = false;
   }
 
-  if (!showingHoldMessage) {
-    // Read sensors
-    float temperature = dht.readTemperature();
-    float humidity = dht.readHumidity();
+  static unsigned long lastDisplayUpdate = 0;
+  unsigned long now = millis();
 
-    if (isnan(temperature) || isnan(humidity)) {
-      Serial.println("Failed to read from DHT sensor!");
-      temperature = 0;
-      humidity = 0;
-    }
+  if (!showingHoldMessage && (now - lastDisplayUpdate >= 2000)) {
+    lastDisplayUpdate = now;
 
-    int adcValue = analogRead(MQ_Pin);
-    float sensorVoltage = (adcValue / 4095.0) * 3.3;
+    float tempLocal, humLocal, ppmLocal;
+    FarmState stateLocal;
 
-    float Rs = ((5.0 * RL_VALUE) / sensorVoltage) - RL_VALUE;
-    float ratio = Rs / RO_CLEAN_AIR_VALUE;
-    float ppm = pow(10, ((log10(ratio) - INTERCEPT) / SLOPE));
+    portENTER_CRITICAL(&mux);
+    tempLocal = temperature;
+    humLocal = humidity;
+    ppmLocal = ppm;
+    stateLocal = currentState;
+    portEXIT_CRITICAL(&mux);
 
-    if (ppm < 0 || isnan(ppm) || isinf(ppm)) {
-      ppm = 0;
-    }
+    String abbrev = getStateAbbrev(stateLocal);
 
-    FarmState currentState = classifyFarmState(temperature, humidity, ppm);
-    String stateAbbrev = getStateAbbrev(currentState);
-    String stateStr = getStateString(currentState);
-
-    // Send data to Blynk (temperature, humidity, ppm, state string)
-    Blynk.virtualWrite(V0, temperature);
-    Blynk.virtualWrite(V1, humidity);
-    Blynk.virtualWrite(V2, ppm);
-    Blynk.virtualWrite(V3, stateStr);
-
-    // Display on LCD
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("T:");
-    if (temperature < 10) lcd.print(" ");
-    lcd.print(temperature, 1);
+    if (tempLocal < 10) lcd.print(" ");
+    lcd.print(tempLocal, 1);
     lcd.print("C    H:");
-    if (humidity < 10) lcd.print(" ");
-    lcd.print(humidity, 0);
+    if (humLocal < 10) lcd.print(" ");
+    lcd.print(humLocal, 0);
     lcd.print("%");
 
     lcd.setCursor(0, 1);
     lcd.print("NH3:");
-    if (ppm < 10) lcd.print(" ");
-    lcd.print(ppm, 0);
+    if (ppmLocal < 10) lcd.print(" ");
+    lcd.print(ppmLocal, 0);
     lcd.print("PPM  S");
-    lcd.print((int)currentState);
+    lcd.print((int)stateLocal);
     lcd.print(":");
-    lcd.print(stateAbbrev);
+    lcd.print(abbrev);
 
-    // LED status based on state
-    switch(currentState) {
+    switch (stateLocal) {
       case OPTIMAL:
         digitalWrite(BLUE_LED, HIGH);
         digitalWrite(YELLOW_LED, LOW);
@@ -205,25 +338,48 @@ void loop() {
         digitalWrite(YELLOW_LED, LOW);
         digitalWrite(RED_LED, HIGH);
         break;
+      default:
+        digitalWrite(BLUE_LED, LOW);
+        digitalWrite(YELLOW_LED, LOW);
+        digitalWrite(RED_LED, LOW);
+        break;
     }
 
-    Serial.print("Environmental Status - Temp: ");
-    Serial.print(temperature);
-    Serial.print("°C, Humidity: ");
-    Serial.print(humidity);
+    Serial.print("Env Status - Temp: ");
+    Serial.print(tempLocal);
+    Serial.print("C, Humidity: ");
+    Serial.print(humLocal);
     Serial.print("%, NH3: ");
-    Serial.print(ppm, 1);
+    Serial.print(ppmLocal, 1);
     Serial.print("ppm | STATE ");
-    Serial.print((int)currentState);
+    Serial.print((int)stateLocal);
     Serial.print(" (");
-    Serial.print(stateAbbrev);
+    Serial.print(abbrev);
     Serial.println(")");
   }
 
-  delay(10000);
-}
+  if ((now - lastBlynkUploadTime >= BLYNK_UPLOAD_INTERVAL) &&
+      (WiFi.status() == WL_CONNECTED && Blynk.connected())) {
+    lastBlynkUploadTime = now;
 
-// ======= Function Definitions =======
+    float tempLocal, humLocal, ppmLocal;
+    FarmState stateLocal;
+
+    portENTER_CRITICAL(&mux);
+    tempLocal = temperature;
+    humLocal = humidity;
+    ppmLocal = ppm;
+    stateLocal = currentState;
+    portEXIT_CRITICAL(&mux);
+
+    Blynk.virtualWrite(V0, tempLocal);
+    Blynk.virtualWrite(V1, humLocal);
+    Blynk.virtualWrite(V2, ppmLocal);
+    Blynk.virtualWrite(V3, (int)stateLocal);  // Send enum integer directly
+  }
+
+  delay(10);
+}
 
 FarmState classifyFarmState(float temperature, float humidity, float ammonia_ppm) {
   if ((20 <= temperature && temperature <= 30) &&
@@ -242,28 +398,11 @@ FarmState classifyFarmState(float temperature, float humidity, float ammonia_ppm
 }
 
 String getStateAbbrev(FarmState state) {
-  switch(state) {
-    case OPTIMAL:
-      return "OK";
-    case SUBOPTIMAL:
-      return "!!";
-    case POOR_DANGEROUS:
-      return "XX";
-    default:
-      return "??";
-  }
-}
-
-String getStateString(FarmState state) {
-  switch(state) {
-    case OPTIMAL:
-      return "optimal";
-    case SUBOPTIMAL:
-      return "suboptimal";
-    case POOR_DANGEROUS:
-      return "poor dangerous";
-    default:
-      return "unknown";
+  switch (state) {
+    case OPTIMAL: return "OK";
+    case SUBOPTIMAL: return "!!";
+    case POOR_DANGEROUS: return "XX";
+    default: return "??";
   }
 }
 
@@ -320,7 +459,8 @@ void calibrate() {
     Serial.println(" kΩ");
 
     delay(3000);
-  } else {
+  }
+  else {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Calibration");
