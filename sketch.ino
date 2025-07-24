@@ -19,6 +19,8 @@ const int Calibration_Switch = 35;
 const int RED_LED = 4;
 const int YELLOW_LED = 16;
 const int BLUE_LED = 17;
+const int BLYNK_UPLOAD_ONGING = 15;
+const int BLYNK_UPLOAD_STOPED = 2;
 
 #define DHT_TYPE DHT22
 DHT dht(DHT_Pin, DHT_TYPE);
@@ -63,6 +65,8 @@ void setup() {
   pinMode(RED_LED, OUTPUT);
   pinMode(YELLOW_LED, OUTPUT);
   pinMode(BLUE_LED, OUTPUT);
+  pinMode(BLYNK_UPLOAD_ONGING, OUTPUT);
+  pinMode(BLYNK_UPLOAD_STOPED, OUTPUT);
 
   digitalWrite(RED_LED, LOW);
   digitalWrite(YELLOW_LED, LOW);
@@ -90,6 +94,16 @@ void setup() {
 
 void loop() {
   Blynk.run();
+
+  //Checking is blynk Upload onging or not 
+
+  if (Blynk.connected()) {
+  digitalWrite(BLYNK_UPLOAD_ONGING, HIGH);
+  digitalWrite(BLYNK_UPLOAD_STOPED, LOW);
+} else {
+  digitalWrite(BLYNK_UPLOAD_ONGING, LOW);
+  digitalWrite(BLYNK_UPLOAD_STOPED, HIGH);
+}
 
   // Read calibration button
   int buttonState = digitalRead(Calibration_Switch);
