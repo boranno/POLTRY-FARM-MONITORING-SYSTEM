@@ -9,7 +9,7 @@
       "id": "dht1",
       "top": -28.5,
       "left": -120.6,
-      "attrs": { "humidity": "34.5", "temperature": "21.4" }
+      "attrs": { "humidity": "52" }
     },
     { "type": "wokwi-gas-sensor", "id": "gas1", "top": 127.5, "left": -309.8, "attrs": {} },
     {
@@ -49,15 +49,7 @@
       "top": -301.2,
       "left": 195.8,
       "attrs": { "color": "green" }
-    },
-    {
-      "type": "wokwi-led",
-      "id": "led4",
-      "top": 207.6,
-      "left": 291.8,
-      "attrs": { "color": "green" }
-    },
-    { "type": "wokwi-led", "id": "led5", "top": 207.6, "left": 359, "attrs": { "color": "red" } }
+    }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
@@ -81,11 +73,7 @@
     [ "led1:C", "esp:GND.2", "black", [ "v288", "h0.4" ] ],
     [ "led2:C", "led1:C", "black", [ "v28.8", "h0.4" ] ],
     [ "led2:A", "esp:16", "gold", [ "v211.2", "h-28.8", "v182.4" ] ],
-    [ "led3:A", "esp:17", "green", [ "v220.8", "h-67.2", "v163.2" ] ],
-    [ "led4:A", "esp:15", "green", [ "v19.2", "h-144", "v-86.4" ] ],
-    [ "led5:C", "esp:2", "red", [ "v28.8", "h-210.8", "v-115.2" ] ],
-    [ "esp:GND.3", "led4:C", "black", [ "h96", "v211.2", "h115.2" ] ],
-    [ "led5:A", "led4:C", "black", [ "v48", "h-76.8" ] ]
+    [ "led3:A", "esp:17", "green", [ "v220.8", "h-67.2", "v163.2" ] ]
   ],
   "dependencies": {}
 }
