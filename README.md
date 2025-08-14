@@ -138,11 +138,16 @@ PFMS features both **online mode** (with cloud dashboard & email alerts) and **o
 ### Configuration
 Edit in the code:
 #define BLYNK_TEMPLATE_ID "TMPL6NkYtXFy4"
+
 #define BLYNK_TEMPLATE_NAME "POULTRY FARM MANAGEMENT SYSTEM"
+
 #define BLYNK_AUTH_TOKEN "YOUR_BLYNK_AUTH_TOKEN"
 
+
 char ssid[] = "YOUR_WIFI_SSID";
+
 char pass[] = "YOUR_WIFI_PASSWORD";
+
 
 
 ### Upload
@@ -162,6 +167,7 @@ char pass[] = "YOUR_WIFI_PASSWORD";
 [Your chosen license, e.g., MIT]
 
 ---
+
 
 
 
