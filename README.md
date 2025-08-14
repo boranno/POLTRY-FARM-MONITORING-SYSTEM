@@ -1,9 +1,13 @@
 # Poultry Farm Management System (PFMS)
 
 **Version:** v2.2 
+
 **Author:** Boranno Golder 
+
 **Board:** ESP32 S3 WROOM 
+
 **Date:** 2025  
+
 
 ---
 
@@ -158,3 +162,4 @@ char pass[] = "YOUR_WIFI_PASSWORD";
 [Your chosen license, e.g., MIT]
 
 ---
+
