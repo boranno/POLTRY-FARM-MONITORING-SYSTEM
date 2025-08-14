@@ -8,8 +8,9 @@
 #include <LiquidCrystal_I2C.h>
 
 // WiFi credentials
-char ssid[] = "PFMS";
-char pass[] = "22222222";
+char ssid[] = "YOUR_WIFI_SSID";
+char pass[] = "YOUR_WIFI_PASSWORD";
+
 
 // Pin assignments
 const int DHT_Pin = 47;
