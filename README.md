@@ -1,109 +1,175 @@
-# Poultry Farm Management System
+# Poultry Farm Management System (PFMS)
 
-**Version:** v2.1  
-**Author:** Boranno Golder
-**Date:** 2025  
+**Version:** v2.2 
 
-## Overview
+**Author:** Boranno Golder 
 
-This project implements a robust **Poultry Farm Environmental Monitoring System** using the ESP32 microcontroller. It continuously monitors **temperature**, **humidity**, and **ammonia (NH3)** levels to ensure optimal poultry health and welfare. It features a responsive LCD display and LED status indicators along with cloud connectivity via the **Blynk IoT platform** for remote monitoring.
+**Board:** ESP32 S3 WROOM 
 
-## Features
+**Date:** 14 AUG 2025  
 
-- **Environmental Monitoring:**  
-  - Temperature and humidity via DHT22 sensor  
-  - Ammonia concentration via MQ-137 sensor  
-- **FreeRTOS-Based Multitasking:** Dedicated sensor reading task for smooth, reliable data acquisition.  
-- **Blynk Cloud Integration:** Remote data streaming and visualization through smartphone or web interfaces.  
-- **User Interface:**  
-  - 16x2 I2C LCD with a scrolling startup animation  
-  - LED statuses signaling environmental condition (Optimal, Suboptimal, Poor/Dangerous)  
-  - LEDs indicating Blynk connection/upload status  
-- **Calibration:** Long press of calibration button to calibrate the ammonia sensor in clean air conditions.  
-- **WiFi Connectivity:** Includes visual connection animation and handling of connection loss.
 
-## Hardware Requirements
+---
 
-- ESP32 Development Board  
-- DHT22 Temperature and Humidity Sensor  
-- MQ-137 Ammonia Gas Sensor  
-- 16x2 I2C LCD Display (address 0x27)  
-- LEDs: Red, Yellow, Blue for environment status; additional LEDs for Blynk upload status  
-- Push Button for sensor calibration (connected to GPIO 18)  
-- Appropriate resistors and wiring  
+## 📌 Overview
 
-## Pin Configuration
+The **Poultry Farm Management System (PFMS)** is an IoT-enabled environmental monitoring and control system for poultry houses, built on the ESP32 microcontroller.  
+It monitors **temperature**, **humidity**, and **ammonia (NH₃)** levels, and automatically controls actuators (fan, heater, ventilation, siren) to maintain healthy conditions for poultry.
 
-| Component                | GPIO Pin | Description                     |
-|--------------------------|----------|--------------------------------|
-| DHT22 Sensor             | 26       | Data pin                       |
-| MQ-137 Sensor Analog     | 33       | Analog input for NH3 detection |
-| Calibration Button       | 18       | Input with pull-up             |
-| Red LED                 | 4        | Poor/Dangerous environment LED |
-| Yellow LED              | 16       | Suboptimal environment LED     |
-| Blue LED                | 17       | Optimal environment LED        |
-| Blynk Upload Ongoing LED | 15       | Lights when uploading data     |
-| Blynk Upload Stopped LED | 2        | Lights when no upload activity |
+PFMS features both **online mode** (with cloud dashboard & email alerts) and **offline mode** (local display & control).
 
-## Software Setup
+---
 
-### Prerequisites
+## ✨ Key Features
 
-- Arduino IDE (or compatible) with ESP32 board support installed  
-- Install libraries:  
-  - `Blynk` (BlynkSimpleEsp32)  
-  - `DHT sensor library`  
-  - `LiquidCrystal_I2C`  
+- **Environmental Monitoring**
+  - Temperature & Humidity via **DHT22**
+  - Ammonia concentration via **MQ-135**
+- **Actuator Control (Automatic)**
+  - Fan
+  - Heater
+  - Ventilation
+  - Siren
+- **Web & Mobile Dashboard**  
+  - Real-time monitoring via **Blynk IoT** (web + Android/iOS)
+- **Automated Alerts**
+  - **Email notifications** for **Suboptimal** and **Dangerous** environmental conditions
+- **Modes of Operation**
+  - **Online mode**: Live data to cloud + dashboard + alerts
+  - **Offline mode**: Full local control with live LCD updates
+- **Non-blocking, staged reconnection system** to handle unstable networks
+- **LCD User Interface**
+  - Startup scrolling animation
+  - Live sensor readings
+  - State abbreviations: `OK` (Optimal), `!!` (Suboptimal), `XX` (Dangerous)
+
+---
+
+## 🛠 Hardware Requirements
+
+| Component                  | GPIO Pin |
+|----------------------------|----------|
+| **DHT22 Sensor**           | 47       |
+| **MQ-135 Analog Output**   | 4        |
+| **Live Update Button**     | 12       |
+| **Red LED**                | 38       |
+| **Yellow LED**             | 37       |
+| **Blue LED**               | 39       |
+| **Blynk Upload Active LED**| 10       |
+| **Blynk Upload Stopped LED**| 11      |
+| **Fan Relay**              | 16       |
+| **Heater Relay**           | 20       |
+| **Ventilation Relay**      | 35       |
+| **Siren Relay**            | 6        |
+
+---
+
+## 🌡 Environmental Thresholds
+
+| Parameter       | Optimal Range      | Suboptimal Range        | Poor/Dangerous Range  |
+|-----------------|--------------------|-------------------------|-----------------------|
+| Temperature (°C)| 20–30              | 15–20 or 30–35          | <15 or >35            |
+| Humidity (%)    | 50–70              | 30–50 or 70–80          | <30 or >80            |
+| Ammonia (ppm)   | <10                 | 10–25                   | >25                   |
+
+---
+
+## 🌐 Blynk Cloud Integration
+
+**Virtual Pin Mapping**:
+
+| Virtual Pin | Data Sent                  |
+|-------------|---------------------------|
+| `V0`        | Temperature (°C)          |
+| `V1`        | Humidity (%)               |
+| `V2`        | Ammonia (ppm)              |
+| `V3`        | State code (1, 2, 3)       |
+
+---
+
+## 📩 Email Notification Logic
+
+- **Trigger:**  
+  - Suboptimal conditions (State 2) — moderate deviations from thresholds  
+  - Dangerous conditions (State 3) — extreme values risking poultry health  
+- **Alert Content:**  
+  - Current readings  
+  - Farm state name & abbreviation  
+  - Recommended corrective action  
+
+> **NOTE:** Email notifications are configured via Blynk’s Eventor / Automations or external server integration. The device sends the data and triggers the event; Blynk handles email delivery.
+
+---
+
+## 🔄 Modes of Operation
+
+### **Online Mode**
+- Live cloud updates every 10 seconds
+- Email alerts for suboptimal & dangerous conditions
+- Viewable via Blynk mobile app and web dashboard
+
+### **Offline Mode**
+- No internet/cloud required
+- Full actuator control + local display
+
+---
+
+## 🚦 Actuator Response
+
+- **State 1 (OPTIMAL)**:  
+  Blue LED ON, fan/heater/vent/siren OFF
+- **State 2 (SUBOPTIMAL)**:  
+  Yellow LED ON, targeted cooling/heating/venting, siren OFF
+- **State 3 (POOR/DANGEROUS)**:  
+  Red LED ON, siren ON, maximum ventilation/control engaged
+
+---
+
+## 💻 Software Setup
+
+### Requirements
+- Arduino IDE / PlatformIO
+- ESP32 board support
+- Libraries:
+  - `BlynkSimpleEsp32`
+  - `DHT sensor library`
+  - `LiquidCrystal_I2C`
 
 ### Configuration
+Edit in the code:
 
-1. Set your WiFi SSID and password in the source file (`ssid[]` and `pass[]`).  
-2. Insert your Blynk authentication token in the `BLYNK_AUTH_TOKEN` variable.  
-3. Confirm pin definitions match your hardware wiring.  
-4. Upload the code to the ESP32 board.
+#define BLYNK_TEMPLATE_ID "TMPL6NkYtXFy4"
 
-## Usage
+#define BLYNK_TEMPLATE_NAME "POULTRY FARM MANAGEMENT SYSTEM"
 
-- Power on the device. The LCD performs a scrolling "POULTRY FARM MONITOR" startup animation.  
-- The system attempts to connect to WiFi with an animation on the LCD.  
-- Upon successful connection, Blynk service automatically starts for remote monitoring.  
-- The sensor task runs continuously, updating readings every 2 seconds locally.  
-- Data is pushed to Blynk every 10 seconds.  
-- Environmental status is indicated by LEDs (blue = optimal, yellow = suboptimal, red = poor/dangerous).  
-- Press and hold the calibration button for 5 seconds in clean air to calibrate the MQ-137 sensor baseline.  
-- Connection status LEDs show Blynk upload activity.
+#define BLYNK_AUTH_TOKEN "YOUR_BLYNK_AUTH_TOKEN"
 
-## Environmental Condition Thresholds
 
-| Parameter       | Optimal Range | Suboptimal Range         | Poor/Dangerous Range  |
-|-----------------|---------------|-------------------------|----------------------|
-| Temperature (°C)| 20 to 30      | 15 to 20 or 30 to 35    | < 15 or > 35         |
-| Humidity (%)    | 50 to 70      | 30 to 50 or 70 to 80    | < 30 or > 80         |
-| Ammonia (ppm)   | < 10          | 10 to 25                | > 25                 |
+char ssid[] = "YOUR_WIFI_SSID";
 
-## Troubleshooting
+char pass[] = "YOUR_WIFI_PASSWORD";
 
-- **WiFi Connection Failed:**  
-  Check credentials, signal strength. If unavailable, system runs local-only mode without Blynk connection.  
-- **Sensor Reading Failed:**  
-  DHT sensor may need replacement or wiring check if NAN values appear.  
-- **Calibration Issues:**  
-  Ensure sensor is in a clean air environment for accurate calibration; hold the calibration button for full 5 seconds.  
-- **Blynk Data Not Updating:**  
-  Confirm Blynk token is correct and app is configured to receive virtual pins V0-V3.
 
-## License
 
-[Specify your license here, e.g., MIT License, GPLv3 etc.]
+### Upload
+1. Connect ESP32 via USB
+2. Select board: **ESP32 S3 WROOM**
+3. Upload code via Arduino IDE 
 
-## Acknowledgments
 
-- Blynk IoT Platform for seamless cloud integration  
-- Arduino community projects for sensor libraries and development ideas
+## 🚀 Future Enhancements
+- Data logging to SD card
+- SMS & push notification integration
+- Manual actuator override from dashboard
 
-## Contact
+---
 
-For questions or support:  
-- Email: borannogolder@gmail.com
-- GitHub: [github.com/yourusername/yourrepo](https://github.com/yourusername/yourrepo)  
+## 📜 License
+[Your chosen license, e.g., MIT]
+
+---
+
+
+
+
 
