@@ -275,6 +275,8 @@ void loop() {
 }
 
 // Utilities
+
+
 FarmState classifyFarmState(float t, float h, float nh3) {
   if ((t >= 20 && t <= 30) && (h >= 50 && h <= 70) && (nh3 < 10)) return OPTIMAL;
   else if ((t > 35 || t < 15) || (h > 80 || h < 30) || (nh3 > 25)) return POOR_DANGEROUS;
