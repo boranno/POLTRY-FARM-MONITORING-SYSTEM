@@ -6,7 +6,7 @@
 
 **Board:** ESP32 S3 WROOM 
 
-**Date:** 2025  
+**Date:** 14 AUG 2025  
 
 
 ---
@@ -162,4 +162,5 @@ char pass[] = "YOUR_WIFI_PASSWORD";
 [Your chosen license, e.g., MIT]
 
 ---
+
 
