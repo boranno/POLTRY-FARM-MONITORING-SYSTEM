@@ -24,7 +24,7 @@ PFMS features both **online mode** (with cloud dashboard & email alerts) and **o
 
 - **Environmental Monitoring**
   - Temperature & Humidity via **DHT22**
-  - Ammonia concentration via **MQ-137**
+  - Ammonia concentration via **MQ-135**
 - **Actuator Control (Automatic)**
   - Fan
   - Heater
@@ -50,7 +50,7 @@ PFMS features both **online mode** (with cloud dashboard & email alerts) and **o
 | Component                  | GPIO Pin |
 |----------------------------|----------|
 | **DHT22 Sensor**           | 47       |
-| **MQ-137 Analog Output**   | 4        |
+| **MQ-135 Analog Output**   | 4        |
 | **Live Update Button**     | 12       |
 | **Red LED**                | 38       |
 | **Yellow LED**             | 37       |
@@ -162,5 +162,6 @@ char pass[] = "YOUR_WIFI_PASSWORD";
 [Your chosen license, e.g., MIT]
 
 ---
+
 
 
