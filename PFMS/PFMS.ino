@@ -1,6 +1,12 @@
-#define BLYNK_TEMPLATE_ID "TMPL6NkYtXFy4"
+/*If you fached any problem regarding display not showing when you are using a external power sourch then must use ground of the external power sourch with
+the board ground you are using */
+
+
+
+
+#define BLYNK_TEMPLATE_ID "TMPL6x7YI25t7"
 #define BLYNK_TEMPLATE_NAME "POULTRY FARM MANAGEMENT SYSTEM"
-#define BLYNK_AUTH_TOKEN "Ar5-H-c2MrMfcBwxQAe72UBtV_DpQZCd"
+#define BLYNK_AUTH_TOKEN "QX_BmwlKPC9sUeMrOE4gNa3ULF6MbSjf" 
 
 #include <WiFi.h>
 #include <BlynkSimpleEsp32.h>
@@ -8,9 +14,8 @@
 #include <LiquidCrystal_I2C.h>
 
 // WiFi credentials
-char ssid[] = "YOUR_WIFI_SSID";
-char pass[] = "YOUR_WIFI_PASSWORD";
-
+char ssid[] = "PFMS";
+char pass[] = "22222222";
 
 // Pin assignments
 const int DHT_Pin = 47;
@@ -23,6 +28,7 @@ const int BLYNK_UPLOAD_ONGOING = 10, BLYNK_UPLOAD_STOPPED = 11;
 
 // Actuators
 const int Fan = 16, Heater = 20, vantilation = 35, siren = 6;
+
 
 // Sensor setup
 #define DHT_TYPE DHT22
@@ -139,7 +145,7 @@ void connectStep(bool uploadEnabled, unsigned long now) {
 void sensorTask(void* pv) {
   for (;;) {
     float temp = dht.readTemperature();
-    float hum = dht.readHumidity();
+    float hum = dht.readHumidity()-20;
     if (isnan(temp) || isnan(hum)) { temp = 0; hum = 0; }
 
     int adcValue = analogRead(MQ_Pin);
@@ -276,8 +282,6 @@ void loop() {
 }
 
 // Utilities
-
-
 FarmState classifyFarmState(float t, float h, float nh3) {
   if ((t >= 20 && t <= 30) && (h >= 50 && h <= 70) && (nh3 < 10)) return OPTIMAL;
   else if ((t > 35 || t < 15) || (h > 80 || h < 30) || (nh3 > 25)) return POOR_DANGEROUS;
