@@ -165,9 +165,10 @@ char pass[] = "YOUR_WIFI_PASSWORD";
 ---
 
 ## 📜 License
-[Your chosen license, e.g., MIT]
+MIT
 
 ---
+
 
 
 
