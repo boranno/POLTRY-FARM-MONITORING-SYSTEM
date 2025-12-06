@@ -165,9 +165,10 @@ char pass[] = "YOUR_WIFI_PASSWORD";
 ---
 
 ## 📜 License
-MIT
+This project is open source and available under the [MIT License](LICENSE).
 
 ---
+
 
 
 
