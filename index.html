@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="theme-color" content="#11251f">
+	<title>PFMS | Poultry Farm Management System</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<div class="app-shell">
+		<aside class="sidebar" id="sidebar">
+			<div class="brand">
+				<div class="brand-mark"><i class="fa-solid fa-feather-pointed"></i></div>
+				<div><strong>PFMS</strong><span>Smart farm ops</span></div>
+			</div>
+			<nav class="main-nav" aria-label="Main navigation">
+				<a class="nav-item active" href="#overview"><i class="fa-solid fa-grid-2"></i><span>Overview</span></a>
+				<a class="nav-item" href="#environment"><i class="fa-solid fa-chart-line"></i><span>Environment</span></a>
+				<a class="nav-item" href="#intelligence"><i class="fa-solid fa-chart-pie"></i><span>Health insights</span></a>
+				<a class="nav-item" href="#actuators"><i class="fa-solid fa-sliders"></i><span>Actuators</span></a>
+				<a class="nav-item" href="#readings"><i class="fa-solid fa-clock-rotate-left"></i><span>Readings log</span></a>
+			</nav>
+			<div class="sidebar-footer">
+				<div class="device-status"><span class="pulse-dot"></span><span><strong id="firebaseConnectionLabel">Firebase offline</strong><small id="firebaseStatus">Connecting...</small></span></div>
+				<div class="farm-id"><span>Farm ID</span><strong>PFMS-0427</strong></div>
+			</div>
+		</aside>
+
+		<main class="main-content">
+			<header class="topbar">
+				<button class="icon-button menu-button" id="menuButton" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button>
+				<div class="page-heading"><p class="eyebrow">Operations center <span class="live-badge"><span></span> Live</span></p><h1>Farm overview</h1></div>
+				<div class="topbar-actions">
+					<div class="connection"><span class="online-dot"></span><span><strong id="systemConnectionLabel">System offline</strong><small id="lastSync">Waiting for ESP32 data</small></span></div>
+					<div class="date-block"><span id="currentDate">Sunday, September 6, 2026</span><strong id="currentTime">09:41:26 AM</strong></div>
+					<button class="avatar" aria-label="Account menu">BA</button>
+				</div>
+			</header>
+
+			<div class="content-wrap">
+				<section class="overview-grid" id="overview" aria-label="Farm status overview">
+					<article class="status-card">
+						<div class="status-card-copy"><p class="section-label">Current farm status</p><div class="status-title"><span class="status-dot optimal"></span><h2 id="farmStatus">Optimal</h2></div><p id="statusSummary">All environmental conditions are within safe limits.</p><div class="status-meta"><span><i class="fa-solid fa-satellite-dish"></i> Last checked <strong id="checkedTime">09:41:26</strong></span><span><i class="fa-solid fa-shield-heart"></i> Safe operation</span></div></div>
+						<div class="status-orbit"><div class="orbit-ring"></div><div class="orbit-core"><i class="fa-solid fa-house-chimney"></i><span>Zone A</span></div><span class="orbit-spark spark-one"></span><span class="orbit-spark spark-two"></span></div>
+					</article>
+					<div class="kpi-stack"><article class="mini-kpi"><span class="kpi-icon teal"><i class="fa-solid fa-cow"></i></span><div><span>Active flock</span><strong>1,248 <small>birds</small></strong></div><span class="trend up"><i class="fa-solid fa-arrow-trend-up"></i> 2.4%</span></article><article class="mini-kpi"><span class="kpi-icon amber"><i class="fa-solid fa-bolt"></i></span><div><span>Energy today</span><strong>18.6 <small>kWh</small></strong></div><span class="trend neutral">On target</span></article></div>
+				</section>
+
+				<section class="sensor-grid" id="environment" aria-label="Live farm readings">
+					<article class="sensor-card temperature"><div class="card-head"><div><p class="section-label">Farm climate</p><h3>Temperature</h3></div><span class="sensor-icon"><i class="fa-solid fa-temperature-half"></i></span></div><div class="reading"><strong id="temperatureValue">24.8</strong><span>°C</span></div><div class="sensor-footer"><span class="state-pill good" id="temperatureState"><i class="fa-solid fa-circle-check"></i> Optimal range</span><span class="range">20–28°C</span></div><div class="sparkline"><span style="height:38%"></span><span style="height:44%"></span><span style="height:41%"></span><span style="height:57%"></span><span style="height:49%"></span><span style="height:62%"></span><span style="height:58%"></span><span style="height:68%"></span></div></article>
+					<article class="sensor-card humidity"><div class="card-head"><div><p class="section-label">Farm climate</p><h3>Humidity</h3></div><span class="sensor-icon"><i class="fa-solid fa-droplet"></i></span></div><div class="reading"><strong id="humidityValue">61.2</strong><span>%</span></div><div class="sensor-footer"><span class="state-pill good" id="humidityState"><i class="fa-solid fa-circle-check"></i> Optimal range</span><span class="range">50–70%</span></div><div class="sparkline"><span style="height:63%"></span><span style="height:59%"></span><span style="height:68%"></span><span style="height:53%"></span><span style="height:57%"></span><span style="height:47%"></span><span style="height:51%"></span><span style="height:49%"></span></div></article>
+					<article class="sensor-card ammonia"><div class="card-head"><div><p class="section-label">Air quality</p><h3>Ammonia</h3></div><span class="sensor-icon"><i class="fa-solid fa-wind"></i></span></div><div class="reading"><strong id="ammoniaValue">8.4</strong><span>PPM</span></div><div class="sensor-footer"><span class="state-pill good" id="ammoniaState"><i class="fa-solid fa-circle-check"></i> Safe level</span><span class="range">&lt; 20 PPM</span></div><div class="sparkline"><span style="height:30%"></span><span style="height:34%"></span><span style="height:28%"></span><span style="height:42%"></span><span style="height:36%"></span><span style="height:40%"></span><span style="height:32%"></span><span style="height:35%"></span></div></article>
+				</section>
+
+				<section class="main-grid">
+					<article class="panel chart-panel"><div class="panel-heading"><div><p class="section-label">Live telemetry</p><h2>Environment trends</h2></div><div class="chart-tools"><span class="last-updated"><span class="pulse-dot"></span> Updating live</span><button class="select-button" aria-label="Chart time range">Last 30 min <i class="fa-solid fa-chevron-down"></i></button></div></div><div class="chart-legend"><span><i class="legend-line temp-line"></i>Temperature</span><span><i class="legend-line humidity-line"></i>Humidity</span><span><i class="legend-line ammonia-line"></i>Ammonia</span></div><div class="chart-wrap"><canvas id="environmentChart" aria-label="Live environment trends chart"></canvas></div></article>
+					<article class="panel intelligence-panel" id="intelligence"><div class="panel-heading"><div><p class="section-label">Farm intelligence</p><h2>Health insights</h2></div><span class="chip chip-green"><i class="fa-solid fa-wand-magic-sparkles"></i> Active</span></div><div class="prediction"><span class="prediction-icon"><i class="fa-solid fa-brain"></i></span><div><span>Current prediction</span><strong id="predictionValue">Optimal</strong></div><span class="confidence">96.8%<small>confidence</small></span></div><div class="prediction-bars"><div><span>Optimal</span><strong>96.8%</strong><i><b class="bar-optimal"></b></i></div><div><span>Suboptimal</span><strong>2.4%</strong><i><b class="bar-suboptimal"></b></i></div><div><span>Dangerous</span><strong>0.8%</strong><i><b class="bar-dangerous"></b></i></div></div><div class="model-details"><span><i class="fa-solid fa-chart-line"></i> Source <strong>Firebase data</strong></span><span><i class="fa-solid fa-stopwatch"></i> Updated <strong id="inferenceTime">Live</strong></span></div></article>
+				</section>
+
+				<section class="bottom-grid">
+					<article class="panel actuator-panel" id="actuators"><div class="panel-heading"><div><p class="section-label">Farm controls</p><h2>Actuator status</h2></div><button class="icon-button" aria-label="Actuator settings"><i class="fa-solid fa-ellipsis"></i></button></div><div class="actuator-list"><div class="actuator"><span class="actuator-icon fan"><i class="fa-solid fa-fan"></i></span><span><strong>Fan</strong><small>Automatic mode</small></span><button class="toggle is-on" data-actuator="Fan" aria-label="Toggle fan"><span></span><b>ON</b></button></div><div class="actuator"><span class="actuator-icon heater"><i class="fa-solid fa-temperature-arrow-up"></i></span><span><strong>Heater</strong><small>Standby mode</small></span><button class="toggle" data-actuator="Heater" aria-label="Toggle heater"><span></span><b>OFF</b></button></div><div class="actuator"><span class="actuator-icon ventilation"><i class="fa-solid fa-arrows-to-circle"></i></span><span><strong>Ventilation</strong><small>Automatic mode</small></span><button class="toggle is-on" data-actuator="Ventilation" aria-label="Toggle ventilation"><span></span><b>ON</b></button></div><div class="actuator"><span class="actuator-icon siren"><i class="fa-solid fa-bell"></i></span><span><strong>Siren</strong><small>Alert system ready</small></span><button class="toggle" data-actuator="Siren" aria-label="Toggle siren"><span></span><b>OFF</b></button></div></div></article>
+					<article class="panel readings-panel" id="readings"><div class="panel-heading"><div><p class="section-label">Firebase history</p><h2>Latest readings</h2></div><button class="text-button" id="downloadBtn"><i class="fa-solid fa-download"></i> Export CSV</button></div><div class="table-scroll"><table><thead><tr><th>Timestamp</th><th>Temperature</th><th>Humidity</th><th>Ammonia</th><th>AI state</th></tr></thead><tbody id="readingsBody"></tbody></table></div></article>
+				</section>
+				<footer class="footer"><span><i class="fa-solid fa-cloud"></i> Live data from Firebase</span><span>PFMS dashboard <strong>v1.0.0</strong></span></footer>
+			</div>
+		</main>
+	</div>
+	<div class="toast" id="toast" role="status"></div>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+	<script type="module" src="script.js?v=20260906"></script>
+</body>
+</html>
