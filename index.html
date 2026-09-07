@@ -21,7 +21,6 @@
 			<nav class="main-nav" aria-label="Main navigation">
 				<a class="nav-item active" href="#overview"><i class="fa-solid fa-grid-2"></i><span>Overview</span></a>
 				<a class="nav-item" href="#environment"><i class="fa-solid fa-chart-line"></i><span>Environment</span></a>
-				<a class="nav-item" href="#intelligence"><i class="fa-solid fa-chart-pie"></i><span>Health insights</span></a>
 				<a class="nav-item" href="#actuators"><i class="fa-solid fa-sliders"></i><span>Actuators</span></a>
 				<a class="nav-item" href="#readings"><i class="fa-solid fa-clock-rotate-left"></i><span>Readings log</span></a>
 			</nav>
@@ -44,11 +43,10 @@
 
 			<div class="content-wrap">
 				<section class="overview-grid" id="overview" aria-label="Farm status overview">
-					<article class="status-card">
+					<article class="status-card optimal">
 						<div class="status-card-copy"><p class="section-label">Current farm status</p><div class="status-title"><span class="status-dot optimal"></span><h2 id="farmStatus">Optimal</h2></div><p id="statusSummary">All environmental conditions are within safe limits.</p><div class="status-meta"><span><i class="fa-solid fa-satellite-dish"></i> Last checked <strong id="checkedTime">09:41:26</strong></span><span><i class="fa-solid fa-shield-heart"></i> Safe operation</span></div></div>
 						<div class="status-orbit"><div class="orbit-ring"></div><div class="orbit-core"><i class="fa-solid fa-house-chimney"></i><span>Zone A</span></div><span class="orbit-spark spark-one"></span><span class="orbit-spark spark-two"></span></div>
 					</article>
-					<div class="kpi-stack"><article class="mini-kpi"><span class="kpi-icon teal"><i class="fa-solid fa-cow"></i></span><div><span>Active flock</span><strong>1,248 <small>birds</small></strong></div><span class="trend up"><i class="fa-solid fa-arrow-trend-up"></i> 2.4%</span></article><article class="mini-kpi"><span class="kpi-icon amber"><i class="fa-solid fa-bolt"></i></span><div><span>Energy today</span><strong>18.6 <small>kWh</small></strong></div><span class="trend neutral">On target</span></article></div>
 				</section>
 
 				<section class="sensor-grid" id="environment" aria-label="Live farm readings">
@@ -57,9 +55,11 @@
 					<article class="sensor-card ammonia"><div class="card-head"><div><p class="section-label">Air quality</p><h3>Ammonia</h3></div><span class="sensor-icon"><i class="fa-solid fa-wind"></i></span></div><div class="reading"><strong id="ammoniaValue">8.4</strong><span>PPM</span></div><div class="sensor-footer"><span class="state-pill good" id="ammoniaState"><i class="fa-solid fa-circle-check"></i> Safe level</span><span class="range">&lt; 20 PPM</span></div><div class="sparkline"><span style="height:30%"></span><span style="height:34%"></span><span style="height:28%"></span><span style="height:42%"></span><span style="height:36%"></span><span style="height:40%"></span><span style="height:32%"></span><span style="height:35%"></span></div></article>
 				</section>
 
-				<section class="main-grid">
-					<article class="panel chart-panel"><div class="panel-heading"><div><p class="section-label">Live telemetry</p><h2>Environment trends</h2></div><div class="chart-tools"><span class="last-updated"><span class="pulse-dot"></span> Updating live</span><button class="select-button" aria-label="Chart time range">Last 30 min <i class="fa-solid fa-chevron-down"></i></button></div></div><div class="chart-legend"><span><i class="legend-line temp-line"></i>Temperature</span><span><i class="legend-line humidity-line"></i>Humidity</span><span><i class="legend-line ammonia-line"></i>Ammonia</span></div><div class="chart-wrap"><canvas id="environmentChart" aria-label="Live environment trends chart"></canvas></div></article>
-					<article class="panel intelligence-panel" id="intelligence"><div class="panel-heading"><div><p class="section-label">Farm intelligence</p><h2>Health insights</h2></div><span class="chip chip-green"><i class="fa-solid fa-wand-magic-sparkles"></i> Active</span></div><div class="prediction"><span class="prediction-icon"><i class="fa-solid fa-brain"></i></span><div><span>Current prediction</span><strong id="predictionValue">Optimal</strong></div><span class="confidence">96.8%<small>confidence</small></span></div><div class="prediction-bars"><div><span>Optimal</span><strong>96.8%</strong><i><b class="bar-optimal"></b></i></div><div><span>Suboptimal</span><strong>2.4%</strong><i><b class="bar-suboptimal"></b></i></div><div><span>Dangerous</span><strong>0.8%</strong><i><b class="bar-dangerous"></b></i></div></div><div class="model-details"><span><i class="fa-solid fa-chart-line"></i> Source <strong>Firebase data</strong></span><span><i class="fa-solid fa-stopwatch"></i> Updated <strong id="inferenceTime">Live</strong></span></div></article>
+				<section class="telemetry-grid" id="telemetry" aria-label="Live farm telemetry">
+					<article class="panel telemetry-panel"><div class="panel-heading"><div><p class="section-label">Live telemetry</p><h2>Temperature</h2></div><span class="telemetry-unit">°C</span></div><div class="chart-wrap"><canvas id="temperatureChart" aria-label="Live temperature telemetry"></canvas></div></article>
+					<article class="panel telemetry-panel"><div class="panel-heading"><div><p class="section-label">Live telemetry</p><h2>Humidity</h2></div><span class="telemetry-unit">%</span></div><div class="chart-wrap"><canvas id="humidityChart" aria-label="Live humidity telemetry"></canvas></div></article>
+					<article class="panel telemetry-panel"><div class="panel-heading"><div><p class="section-label">Live telemetry</p><h2>Ammonia</h2></div><span class="telemetry-unit">PPM</span></div><div class="chart-wrap"><canvas id="ammoniaChart" aria-label="Live ammonia telemetry"></canvas></div></article>
+					<article class="panel telemetry-panel combined"><div class="panel-heading"><div><p class="section-label">Live telemetry</p><h2>All conditions</h2></div><span class="last-updated"><span class="pulse-dot"></span> Updating live</span></div><div class="chart-legend"><span><i class="legend-line temp-line"></i>Temperature</span><span><i class="legend-line humidity-line"></i>Humidity</span><span><i class="legend-line ammonia-line"></i>Ammonia</span></div><div class="chart-wrap"><canvas id="combinedChart" aria-label="Combined live environment telemetry"></canvas></div></article>
 				</section>
 
 				<section class="bottom-grid">
