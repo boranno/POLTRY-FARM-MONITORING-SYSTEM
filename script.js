@@ -5,6 +5,7 @@ const state = { temperature: 24.8, humidity: 61.2, ammonia: 8.4, readings: [] };
 const history = { temperature: [], humidity: [], ammonia: [] };
 const chartLabels = [];
 const telemetryCharts = {};
+let telemetryRows = [];
 const ESP32_TIMEOUT_MS = 2 * 60 * 1000;
 let latestEsp32ReadingAt = 0;
 let lastFarmStatus = '';
@@ -49,6 +50,47 @@ function buildTelemetryCharts() {
   definitions.forEach(([id, datasets, yMax]) => buildChart(id, datasets.map((dataset) => ({ ...dataset, tension: .42, borderWidth: 2, pointRadius: 0 })), yMax));
 }
 
+function updateTelemetryCharts(rows) {
+  const chartRows = rows.slice().reverse();
+  history.temperature.splice(0, history.temperature.length, ...chartRows.map((row) => row.temperature));
+  history.humidity.splice(0, history.humidity.length, ...chartRows.map((row) => row.humidity));
+  history.ammonia.splice(0, history.ammonia.length, ...chartRows.map((row) => row.ammonia));
+  chartLabels.length = 0;
+  chartRows.forEach((row) => chartLabels.push(formatTime(timestampValue(row.timestamp))));
+  Object.values(telemetryCharts).forEach((chart) => { chart.data.labels = chartLabels; chart.update('none'); });
+}
+
+function formatMetric(value, unit) {
+  return Number.isFinite(value) ? `${value.toFixed(1)}${unit}` : '--';
+}
+
+function summarizeRows(rows, days) {
+  if (!rows.length) return { temperature: null, humidity: null, ammonia: null };
+  const end = timestampValue(rows[0].timestamp).getTime();
+  const start = end - days * 24 * 60 * 60 * 1000;
+  const periodRows = rows.filter((row) => timestampValue(row.timestamp).getTime() >= start && timestampValue(row.timestamp).getTime() <= end);
+  return ['temperature', 'humidity', 'ammonia'].reduce((summary, key) => {
+    const values = periodRows.map((row) => row[key]).filter(Number.isFinite);
+    summary[key] = values.length ? { min: Math.min(...values), max: Math.max(...values), avg: values.reduce((sum, value) => sum + value, 0) / values.length } : null;
+    return summary;
+  }, {});
+}
+
+function renderSummary(bodyId, summary) {
+  const definitions = [['temperature', 'Temperature', '°C'], ['humidity', 'Humidity', '%'], ['ammonia', 'Ammonia', ' PPM']];
+  $(`#${bodyId}`).innerHTML = definitions.map(([key, label, unit]) => {
+    const values = summary[key];
+    return `<tr><th>${label}</th><td>${formatMetric(values?.min, unit)}</td><td>${formatMetric(values?.max, unit)}</td><td>${formatMetric(values?.avg, unit)}</td></tr>`;
+  }).join('');
+}
+
+function updateSummaries(rows) {
+  const daily = summarizeRows(rows, 1);
+  renderSummary('dailySummaryBody', daily);
+  renderSummary('weeklySummaryBody', summarizeRows(rows, 7));
+  $('#dailySummaryDate').textContent = rows.length ? timestampValue(rows[0].timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'No data';
+}
+
 function updateSensor(id, value) {
   $(`#${id}Value`).textContent = value.toFixed(1);
   const stateElement = $(`#${id}State`);
@@ -82,9 +124,6 @@ function applyReading(data, timestamp = new Date()) {
   const now = timestampValue(timestamp);
   $('#currentDate').textContent = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
   $('#currentTime').textContent = formatTime(now); $('#checkedTime').textContent = formatTime(now);
-  history.temperature.push(state.temperature); history.humidity.push(state.humidity); history.ammonia.push(state.ammonia); chartLabels.push(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  Object.values(history).forEach((series) => { while (series.length > 12) series.shift(); }); while (chartLabels.length > 12) chartLabels.shift();
-  Object.values(telemetryCharts).forEach((chart) => { chart.data.labels = chartLabels; chart.update('none'); });
 }
 
 function showToast(message) { const toast = $('#toast'); toast.textContent = message; toast.classList.add('show'); window.clearTimeout(showToast.timeout); showToast.timeout = window.setTimeout(() => toast.classList.remove('show'), 2400); }
@@ -108,6 +147,9 @@ async function subscribeToFirebase() {
           return true;
         });
       state.readings = rows.slice(0, 8).map((row) => ({ timestamp: formatTime(timestampValue(row.timestamp)), temperature: numeric(row.temperature, state.temperature), humidity: numeric(row.humidity, state.humidity), ammonia: numeric(row.ammonia, state.ammonia), ai: row.state || 'Optimal' }));
+      telemetryRows = rows.map((row) => ({ ...row, temperature: numeric(row.temperature, state.temperature), humidity: numeric(row.humidity, state.humidity), ammonia: numeric(row.ammonia, state.ammonia) }));
+      updateTelemetryCharts(telemetryRows);
+      updateSummaries(telemetryRows);
       if (current) {
         const latestTimestamp = current.timestamp ? timestampValue(current.timestamp) : null;
         latestEsp32ReadingAt = latestTimestamp?.getTime() || 0;

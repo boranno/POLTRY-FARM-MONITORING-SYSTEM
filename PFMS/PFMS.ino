@@ -9,6 +9,7 @@
 #include <FirebaseClient.h>
 
 #include <DHT.h>
+#include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
 // TensorFlow Lite Micro
@@ -72,6 +73,9 @@ const unsigned long FIREBASE_UPLOAD_INTERVAL = 60000;
 
 #define MQ135_PIN   6
 
+#define LCD_SDA     8
+#define LCD_SCL     9
+
 
 // Online/offline switch
 #define LIVE_UPDATE_REVIEW 12
@@ -99,7 +103,7 @@ const unsigned long FIREBASE_UPLOAD_INTERVAL = 60000;
 
 DHT dht(DHTPIN, DHTTYPE);
 
-LiquidCrystal_I2C lcd(PCF8574_ADDR_A21_A11_A01, 16, 2);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 
 // ============================================================
@@ -1544,7 +1548,8 @@ void setup() {
     // LCD
     // ----------------------------
 
-    lcd.begin();
+    Wire.setPins(LCD_SDA, LCD_SCL);
+    lcd.init();
 
     lcd.backlight();
 
